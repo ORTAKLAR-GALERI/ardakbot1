@@ -3,4 +3,3 @@ python-dotenv
 PyNaCl
 pytz
 gTTS
-imageio-ffmpeg
