@@ -7,12 +7,28 @@ import ctypes
 
 load_dotenv()
 
-# Standart discord.py opus araması
+# Opus Bypass: Railway apt.txt bypass
 if not discord.opus.is_loaded():
-    try:
-        discord.opus.load_opus("libopus.so.0")
-    except Exception:
-        pass
+    beles_opus_yollari = [
+        'libopus.so.0',
+        'libopus.so',
+        '/usr/lib/x86_64-linux-gnu/libopus.so.0',
+        '/usr/lib/libopus.so.0',
+        '/usr/lib/x86_64-linux-gnu/libopus.so',
+        '/usr/lib/x86_64-linux-gnu/libopus.so.1'
+    ]
+    yuklendi = False
+    for deneme_yolu in beles_opus_yollari:
+        try:
+            discord.opus.load_opus(deneme_yolu)
+            yuklendi = True
+            print(f"✅ [OPUS KİLİDİ KIRILDI] Kütüphane {deneme_yolu} dizininden hatasız yüklendi!")
+            break
+        except Exception:
+            pass
+    
+    if not yuklendi:
+        print("❌ [OPUS İFLAS ETTİ] Sunucu kesinlikle Opus kütüphanesini apt ile indirmemiş!")
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 

@@ -3,3 +3,4 @@ python-dotenv
 PyNaCl
 imageio-ffmpeg
 pytz
+urllib3
