@@ -81,6 +81,28 @@ async def on_message(message):
             await message.reply(liste_metni)
         return
 
+    # Yeni .say komutu – sadece bot sesli kanalda iken çalışır
+    if komut == '.say' and len(parts) > 1:
+        vc = message.guild.voice_client
+        if not vc or not vc.is_connected():
+            await message.reply('❌ Bot şu anda bir ses kanalında değil, önce bir kanala bağlanmalı.')
+            return
+        tts_text = ' '.join(parts[1:])
+        if len(tts_text) > MAX_TTS_LENGTH:
+            await message.reply(f'❌ Metin çok uzun! En fazla {MAX_TTS_LENGTH} karakter kullanabilirsin.')
+            return
+        filename = f'tts_{uuid.uuid4().hex}.mp3'
+        try:
+            gTTS(text=tts_text, lang='tr').save(filename)
+        except Exception as e:
+            await message.reply('❌ TTS oluşturulurken bir hata oluştu.')
+            print(f'TTS hatası: {e}')
+            return
+        vc.play(discord.FFmpegPCMAudio(filename, executable=imageio_ffmpeg.get_ffmpeg_exe()),
+                after=lambda e: os.remove(filename) if os.path.exists(filename) else None)
+        await message.reply('🔊 Metin sesli olarak okunuyor...')
+        return
+
     if len(parts) >= 2:
         try:
             hedef_id = int(parts[1].strip())
@@ -140,29 +162,6 @@ async def on_message(message):
                             print(f'❌ {member.name} engelleri kaldırılırken hata oldu: {e}')
             else:
                 await message.reply('⚠️ Bu kişi zaten cezalı bulunmuyor.')
-
-    # Yeni .say komutu – sadece bot sesli kanalda iken çalışır
-    if komut == '.say' and len(parts) > 1:
-        vc = message.guild.voice_client
-        if not vc or not vc.is_connected():
-            await message.reply('❌ Bot şu anda bir ses kanalında değil, önce bir kanala bağlanmalı.')
-            return
-        tts_text = ' '.join(parts[1:])
-        if len(tts_text) > MAX_TTS_LENGTH:
-            await message.reply(f'❌ Metin çok uzun! En fazla {MAX_TTS_LENGTH} karakter kullanabilirsin.')
-            return
-        filename = f'tts_{uuid.uuid4().hex}.mp3'
-        try:
-            gTTS(text=tts_text, lang='tr').save(filename)
-        except Exception as e:
-            await message.reply('❌ TTS oluşturulurken bir hata oluştu.')
-            print(f'TTS hatası: {e}')
-            return
-        vc.play(discord.FFmpegPCMAudio(filename, executable=imageio_ffmpeg.get_ffmpeg_exe()),
-                after=lambda e: os.remove(filename) if os.path.exists(filename) else None)
-        await message.reply('🔊 Metin sesli olarak okunuyor...')
-        return
-
 @client.event
 async def on_voice_state_update(member, before, after):
     if member.id == client.user.id and before.channel is not None and after.channel is None:
