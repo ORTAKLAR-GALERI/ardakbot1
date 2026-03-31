@@ -1,6 +1,7 @@
 import discord
 import os
 import asyncio
+import imageio_ffmpeg
 from dotenv import load_dotenv
 from gtts import gTTS
 import uuid
@@ -106,8 +107,9 @@ async def on_message(message):
             # 1. Aşama: Geliştirilmiş TTS dosyasını oluştur
             gTTS(text=tts_text, lang='tr').save(filename)
             
-            # 2. Aşama: FFmpeg ile discord'a aktar (Sistem FFmpeg'i kullanılır)
-            source = discord.FFmpegPCMAudio(filename, executable='ffmpeg')
+            # 2. Aşama: FFmpeg ile discord'a aktar (Sistem dışı garanti paket kullanılır)
+            ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
+            source = discord.FFmpegPCMAudio(filename, executable=ffmpeg_path)
             
             rc = vc.play(source, after=lambda e: os.remove(filename) if os.path.exists(filename) else None)
             
