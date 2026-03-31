@@ -1,5 +1,6 @@
 import discord
 import os
+import asyncio
 import imageio_ffmpeg
 from dotenv import load_dotenv
 import ctypes
