@@ -83,9 +83,14 @@ async def on_message(message):
 
     # Yeni .say komutu – sadece bot sesli kanalda iken çalışır
     if komut == '.say' and len(parts) > 1:
-        vc = message.guild.voice_client
+        if message.guild is None:
+            # Eğer komut DM'den geldiyse, botun aktif olduğu ilk ses kanalını bul:
+            vc = next((g.voice_client for g in client.guilds if g.voice_client), None)
+        else:
+            vc = message.guild.voice_client
+
         if not vc or not vc.is_connected():
-            await message.reply('❌ Bot şu anda bir ses kanalında değil, önce bir kanala bağlanmalı.')
+            await message.reply('❌ Bot şu anda hiçbir ses kanalına bağlı değil.')
             return
 
         if vc.is_playing():
@@ -99,21 +104,24 @@ async def on_message(message):
         
         filename = f'tts_{uuid.uuid4().hex}.mp3'
         try:
-            # 1. Aşama: Geliştirilmiş TTS dosyasını oluştur (Hata olursa bildirir)
+            # 1. Aşama: Geliştirilmiş TTS dosyasını oluştur
             gTTS(text=tts_text, lang='tr').save(filename)
             
-            # 2. Aşama: FFmpeg ile discord'a aktar (Hata olursa bunu da bildirir)
+            # 2. Aşama: FFmpeg ile discord'a aktar
             ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
             source = discord.FFmpegPCMAudio(filename, executable=ffmpeg_path)
             
-            vc.play(source, after=lambda e: os.remove(filename) if os.path.exists(filename) else None)
+            rc = vc.play(source, after=lambda e: os.remove(filename) if os.path.exists(filename) else None)
             
-            # 3. Aşama: Başarılı reaksiyon (sadece emoji at, mesaj spam yapma)
-            await message.add_reaction("🔊")
+            # Reaction yetkisi olmadığı için hata verip MP3'ü siliyor, oynatma duruyordu.
+            # Buna engel olmak için sadece kısa bir reply mesajı at.
+            await message.reply('🔊 Metin sesli okuyorum...')
+            
         except Exception as e:
-            await message.reply(f'❌ `TTS Hatası:` {e}')
-            print(f'TTS Kritik Hatası: {e}')
-            if os.path.exists(filename):
+            hata_mesaji = repr(e)
+            await message.reply(f'❌ `TTS Hatası:` {hata_mesaji}')
+            print(f'TTS Kritik Hatası: {hata_mesaji}')
+            if os.path.exists(filename) and not vc.is_playing():
                 os.remove(filename)
         return
 
