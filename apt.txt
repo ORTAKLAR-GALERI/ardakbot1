@@ -1,1 +1,5 @@
 ffmpeg
+libopus0
+libopus-dev
+libffi-dev
+libsodium-dev
