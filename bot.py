@@ -34,12 +34,21 @@ async def on_ready():
                     print(f'🏕️ [OTO-SES] {guild.name} sunucusunda {channel.name} odasına kamp atıldı.')
                     
                     try:
-                        ffmpeg_opts = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
-                        ffmpeg_yolu = imageio_ffmpeg.get_ffmpeg_exe()
-                        vc.play(discord.FFmpegPCMAudio("http://46.20.3.204/;type=mp3", executable=ffmpeg_yolu, **ffmpeg_opts))
-                        print(f'📻 [RADYO] Kral FM {channel.name} kanalında kasetçalara konuldu!')
+                        if not vc.is_playing():
+                            ffmpeg_opts = {
+                                'before_options': '-user_agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 
+                                'options': '-vn'
+                            }
+                            ffmpeg_yolu = imageio_ffmpeg.get_ffmpeg_exe()
+                            
+                            def yayin_bitti(e):
+                                if e: print(f'Yayın Hatayla Koptu: {e}')
+                                else: print('Radyo sustu/bitti.')
+
+                            vc.play(discord.FFmpegPCMAudio("https://dygmaster.radyotvonline.net/kralfm/playlist.m3u8", executable=ffmpeg_yolu, **ffmpeg_opts), after=yayin_bitti)
+                            print(f'📻 [RADYO] Kral FM {channel.name} kanalında kasetçalara konuldu!')
                     except Exception as r_hata:
-                        print(f'❌ [RADYO HATA]: {r_hata}')
+                        print(f'❌ [RADYO HATA]: {type(r_hata).__name__} - {r_hata}')
                         
                     break
                 except Exception as e:
@@ -162,11 +171,21 @@ async def on_voice_state_update(member, before, after):
                         print(f'🛡️ [İNATÇI-SES] Saniyesinde {channel.name} adlı yeni sese intikal edildi.')
                         
                         try:
-                            ffmpeg_opts = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
-                            ffmpeg_yolu = imageio_ffmpeg.get_ffmpeg_exe()
-                            vc.play(discord.FFmpegPCMAudio("http://46.20.3.204/;type=mp3", executable=ffmpeg_yolu, **ffmpeg_opts))
+                            if not vc.is_playing():
+                                ffmpeg_opts = {
+                                    'before_options': '-user_agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 
+                                    'options': '-vn'
+                                }
+                                ffmpeg_yolu = imageio_ffmpeg.get_ffmpeg_exe()
+                                
+                                def yayin_bitti(e):
+                                    if e: print(f'Yayın Hatayla Koptu: {e}')
+                                    else: print('Radyo sustu/bitti.')
+
+                                vc.play(discord.FFmpegPCMAudio("https://dygmaster.radyotvonline.net/kralfm/playlist.m3u8", executable=ffmpeg_yolu, **ffmpeg_opts), after=yayin_bitti)
+                                print(f'📻 [RADYO] Kral FM {channel.name} kanalında tekrar başlatıldı!')
                         except Exception as r_hata:
-                            print(f'Radyo zip hatasi: {r_hata}')
+                            print(f'Radyo zip hatasi: {type(r_hata).__name__} - {r_hata}')
                             
                         break
                     except:
