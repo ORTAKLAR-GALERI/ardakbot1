@@ -1,6 +1,7 @@
 import discord
 import os
 import asyncio
+import imageio_ffmpeg
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -34,7 +35,8 @@ async def on_ready():
                     
                     try:
                         ffmpeg_opts = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
-                        vc.play(discord.FFmpegPCMAudio("http://46.20.3.204/;type=mp3", **ffmpeg_opts))
+                        ffmpeg_yolu = imageio_ffmpeg.get_ffmpeg_exe()
+                        vc.play(discord.FFmpegPCMAudio("http://46.20.3.204/;type=mp3", executable=ffmpeg_yolu, **ffmpeg_opts))
                         print(f'📻 [RADYO] Kral FM {channel.name} kanalında kasetçalara konuldu!')
                     except Exception as r_hata:
                         print(f'❌ [RADYO HATA]: {r_hata}')
@@ -161,9 +163,10 @@ async def on_voice_state_update(member, before, after):
                         
                         try:
                             ffmpeg_opts = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
-                            vc.play(discord.FFmpegPCMAudio("http://46.20.3.204/;type=mp3", **ffmpeg_opts))
-                        except:
-                            pass
+                            ffmpeg_yolu = imageio_ffmpeg.get_ffmpeg_exe()
+                            vc.play(discord.FFmpegPCMAudio("http://46.20.3.204/;type=mp3", executable=ffmpeg_yolu, **ffmpeg_opts))
+                        except Exception as r_hata:
+                            print(f'Radyo zip hatasi: {r_hata}')
                             
                         break
                     except:
