@@ -39,9 +39,11 @@ async def on_message(message):
                 pass
         elif ceza == 'mal':
             try:
-                await message.reply("MAL VELET 🤡")
+                await message.add_reaction("🇲")
+                await message.add_reaction("🇦")
+                await message.add_reaction("🇱")
             except discord.Forbidden:
-                print(f'❌ Hata: {message.author} kişisine cevap vermeye yetki yetmedi!')
+                print(f'❌ Hata: {message.author} kişisinin mesajına emoji koymak için yetki yetmedi! (Add Reactions)')
             except discord.NotFound:
                 pass
 
