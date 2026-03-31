@@ -1,2 +1,0 @@
-# ardakbot1
-botturlo
