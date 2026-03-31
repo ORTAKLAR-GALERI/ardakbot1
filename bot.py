@@ -1,41 +1,17 @@
 import discord
 import os
-import asyncio
 import imageio_ffmpeg
 from dotenv import load_dotenv
-import urllib.request
 import ctypes
 
 load_dotenv()
 
+# Standart discord.py opus araması
 if not discord.opus.is_loaded():
-    beles_opus_yollari = [
-        'libopus.so.0',
-        'libopus.so',
-        '/usr/lib/x86_64-linux-gnu/libopus.so.0',
-        '/usr/lib/libopus.so.0',
-        './libopus.so'
-    ]
-    yuklendi = False
-    for deneme_yolu in beles_opus_yollari:
-        try:
-            discord.opus.load_opus(deneme_yolu)
-            yuklendi = True
-            print(f"✅ [OPUS KİLİDİ KIRILDI] Kütüphane {deneme_yolu} dizininden zorla yüklendi!")
-            break
-        except Exception:
-            pass
-
-    if not yuklendi:
-        print("⏳ [OPUS İNDİRİLİYOR] Sunucuda Opus yok, dışarıdan (kaçak) indiriliyor...")
-        try:
-            req = urllib.request.Request("https://github.com/discord-jda/JDA/raw/master/src/main/resources/natives/linux-amd64/libopus.so", headers={'User-Agent': 'Mozilla/5.0'})
-            with urllib.request.urlopen(req) as response, open("libopus.so", 'wb') as out_file:
-                out_file.write(response.read())
-            discord.opus.load_opus("./libopus.so")
-            print("✅ [OPUS KİLİDİ KIRILDI] İnternetten indirildi ve sisteme iğneyle enjekte edildi!")
-        except Exception as e:
-            print(f"❌ [OPUS İFLAS ETTİ]: {e}")
+    try:
+        discord.opus.load_opus("libopus.so.0")
+    except Exception:
+        pass
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 
