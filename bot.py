@@ -28,35 +28,48 @@ async def on_ready():
 async def on_message(message):
     if message.author == client.user:
         return
-    if message.author.id in cezalar and cezalar[message.author.id] == 'end':
-        try:
-            await message.delete()
-        except discord.Forbidden:
-            print(f'❌ Hata: {message.author} kişinin mesajını silmeye botun yetkisi yetmedi! (Manage Messages yetkisi veya Hiyerarşi sorunu)')
-        except discord.NotFound:
-            pass
-    elif message.author.id in cezalar and cezalar[message.author.id] == 'mal':
-        try:
-            await message.reply("MAL VELET 🤡")
-        except discord.Forbidden:
-            print(f'❌ Hata: {message.author} kişinin mesajına cevap vermeye (reply) yetkim yetmedi!')
-        except discord.NotFound:
-            pass
+    if message.author.id in cezalar:
+        ceza = cezalar[message.author.id]
+        if ceza in ['end', 'chat']:
+            try:
+                await message.delete()
+            except discord.Forbidden:
+                print(f'❌ Hata: {message.author} mesajını silmeye yetki yetmedi!')
+            except discord.NotFound:
+                pass
+        elif ceza == 'mal':
+            try:
+                await message.reply("MAL VELET 🤡")
+            except discord.Forbidden:
+                print(f'❌ Hata: {message.author} kişisine cevap vermeye yetki yetmedi!')
+            except discord.NotFound:
+                pass
 
     if message.author.id not in ADMIN_IDS:
         return
 
     parts = message.content.split(' ')
+    komut = parts[0].lower()
+
+    if komut == '.liste':
+        if not cezalar:
+            await message.reply('📭 Şu an kimsenin aktif cezası bulunmuyor.')
+        else:
+            liste_metni = "**📜 Aktif Cezalılar Listesi:**\n"
+            for u_id, c_tip in cezalar.items():
+                liste_metni += f"• <@{u_id}>: `{c_tip.upper()}`\n"
+            await message.reply(liste_metni)
+        return
+
     if len(parts) >= 2:
-        komut = parts[0].lower()
         try:
             hedef_id = int(parts[1].strip())
         except ValueError:
-            if komut in ['.end', '.ses', '.kulak', '.mal', '.cikar']:
+            if komut in ['.end', '.ses', '.kulak', '.mal', '.chat', '.cikar']:
                 await message.reply('❌ Lütfen geçerli bir ID girin. (Örn: `.end 123456789`)')
             return
 
-        if komut in ['.end', '.ses', '.kulak', '.mal']:
+        if komut in ['.end', '.ses', '.kulak', '.mal', '.chat']:
             if komut == '.end':
                 cezalar[hedef_id] = 'end'
                 await message.reply(f'🧨 `{hedef_id}` kişisine **END** cezası verildi!')
@@ -73,6 +86,10 @@ async def on_message(message):
                 cezalar[hedef_id] = 'mal'
                 await message.reply(f'🤡 `{hedef_id}` kişisine **MAL** cezası verildi! Artık tüm mesajlarına M-A-L emojileri eklenecek.')
                 print(f"🔒 [CEZA] 'MAL' - Veren: {message.author} | Hedef: {hedef_id}")
+            elif komut == '.chat':
+                cezalar[hedef_id] = 'chat'
+                await message.reply(f'🙊 `{hedef_id}` kişisine **CHAT** cezası verildi! Artık yazdığı her şey anında silinecek.')
+                print(f"🔒 [CEZA] 'CHAT' - Veren: {message.author} | Hedef: {hedef_id}")
 
             for guild in client.guilds:
                 member = guild.get_member(hedef_id)
