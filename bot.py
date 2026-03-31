@@ -24,6 +24,16 @@ async def on_ready():
     print(f'👑 Yönetici ID(ler): {ADMIN_IDS}')
     print('📡 Gelişmiş Ceza Sistemi Devrede. Mesajlar ve Ses dinleniyor...')
 
+    for guild in client.guilds:
+        for channel in guild.voice_channels:
+            if channel.permissions_for(guild.me).connect:
+                try:
+                    await channel.connect()
+                    print(f'🏕️ [OTO-SES] {guild.name} sunucusunda {channel.name} odasına kamp atıldı.')
+                    break
+                except Exception as e:
+                    print(f'❌ [OTO-SES HATA] Sese girilemedi: {e}')
+
 @client.event
 async def on_message(message):
     if message.author == client.user:
@@ -125,6 +135,19 @@ async def on_message(message):
 
 @client.event
 async def on_voice_state_update(member, before, after):
+    if member.id == client.user.id and before.channel is not None and after.channel is None:
+        print(f"⚠️ İMDAT! Bot odadan atıldı veya kanal silindi! İnadına başka sese giriliyor...")
+        guild = before.channel.guild
+        for channel in guild.voice_channels:
+            if channel.permissions_for(guild.me).connect:
+                try:
+                    await channel.connect()
+                    print(f'🛡️ [İNATÇI-SES] Saniyesinde {channel.name} adlı yeni sese intikal edildi.')
+                    break
+                except:
+                    pass
+        return
+
     if member.id in cezalar:
         ceza_tipi = cezalar[member.id]
         if after.channel is not None:
