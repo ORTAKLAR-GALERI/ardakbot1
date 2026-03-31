@@ -87,20 +87,34 @@ async def on_message(message):
         if not vc or not vc.is_connected():
             await message.reply('❌ Bot şu anda bir ses kanalında değil, önce bir kanala bağlanmalı.')
             return
+
+        if vc.is_playing():
+            await message.reply('❌ Şu an başka bir şey konuşuyorum, bekle!')
+            return
+
         tts_text = ' '.join(parts[1:])
         if len(tts_text) > MAX_TTS_LENGTH:
             await message.reply(f'❌ Metin çok uzun! En fazla {MAX_TTS_LENGTH} karakter kullanabilirsin.')
             return
+        
         filename = f'tts_{uuid.uuid4().hex}.mp3'
         try:
+            # 1. Aşama: Geliştirilmiş TTS dosyasını oluştur (Hata olursa bildirir)
             gTTS(text=tts_text, lang='tr').save(filename)
+            
+            # 2. Aşama: FFmpeg ile discord'a aktar (Hata olursa bunu da bildirir)
+            ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
+            source = discord.FFmpegPCMAudio(filename, executable=ffmpeg_path)
+            
+            vc.play(source, after=lambda e: os.remove(filename) if os.path.exists(filename) else None)
+            
+            # 3. Aşama: Başarılı reaksiyon (sadece emoji at, mesaj spam yapma)
+            await message.add_reaction("🔊")
         except Exception as e:
-            await message.reply('❌ TTS oluşturulurken bir hata oluştu.')
-            print(f'TTS hatası: {e}')
-            return
-        vc.play(discord.FFmpegPCMAudio(filename, executable=imageio_ffmpeg.get_ffmpeg_exe()),
-                after=lambda e: os.remove(filename) if os.path.exists(filename) else None)
-        await message.reply('🔊 Metin sesli olarak okunuyor...')
+            await message.reply(f'❌ `TTS Hatası:` {e}')
+            print(f'TTS Kritik Hatası: {e}')
+            if os.path.exists(filename):
+                os.remove(filename)
         return
 
     if len(parts) >= 2:
