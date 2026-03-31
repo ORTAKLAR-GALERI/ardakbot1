@@ -1,6 +1,4 @@
 discord.py[voice]
 python-dotenv
 PyNaCl
-imageio-ffmpeg
 pytz
-urllib3

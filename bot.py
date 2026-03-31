@@ -1,34 +1,9 @@
 import discord
 import os
 import asyncio
-import imageio_ffmpeg
 from dotenv import load_dotenv
-import ctypes
 
 load_dotenv()
-
-# Opus Bypass: Railway apt.txt bypass
-if not discord.opus.is_loaded():
-    beles_opus_yollari = [
-        'libopus.so.0',
-        'libopus.so',
-        '/usr/lib/x86_64-linux-gnu/libopus.so.0',
-        '/usr/lib/libopus.so.0',
-        '/usr/lib/x86_64-linux-gnu/libopus.so',
-        '/usr/lib/x86_64-linux-gnu/libopus.so.1'
-    ]
-    yuklendi = False
-    for deneme_yolu in beles_opus_yollari:
-        try:
-            discord.opus.load_opus(deneme_yolu)
-            yuklendi = True
-            print(f"✅ [OPUS KİLİDİ KIRILDI] Kütüphane {deneme_yolu} dizininden hatasız yüklendi!")
-            break
-        except Exception:
-            pass
-    
-    if not yuklendi:
-        print("❌ [OPUS İFLAS ETTİ] Sunucu kesinlikle Opus kütüphanesini apt ile indirmemiş!")
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 
@@ -55,25 +30,7 @@ async def on_ready():
             if channel.permissions_for(guild.me).connect:
                 try:
                     vc = await channel.connect()
-                    print(f'🏕️ [OTO-SES] {guild.name} sunucusunda {channel.name} odasına kamp atıldı.')
-                    
-                    try:
-                        if not vc.is_playing():
-                            ffmpeg_opts = {
-                                'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 
-                                'options': '-vn'
-                            }
-                            ffmpeg_yolu = imageio_ffmpeg.get_ffmpeg_exe()
-                            
-                            def yayin_bitti(e):
-                                if e: print(f'Yayın Hatayla Koptu: {e}')
-                                else: print('Radyo sustu/bitti.')
-
-                            vc.play(discord.FFmpegPCMAudio("http://stream.laut.fm/arabesk", executable=ffmpeg_yolu, stderr=None, **ffmpeg_opts), after=yayin_bitti)
-                            print(f'📻 [RADYO] Kesintisiz Arabesk {channel.name} kanalına basıldı!')
-                    except Exception as r_hata:
-                        print(f'❌ [RADYO HATA]: {type(r_hata).__name__} - {r_hata}')
-                        
+                    print(f'🏕️ [OTO-SES] {guild.name} sunucusunda {channel.name} odasına sessiz koruma kalkanı atıldı.')
                     await asyncio.sleep(2.5)
                     break
                 except Exception as e:
@@ -181,11 +138,11 @@ async def on_message(message):
 @client.event
 async def on_voice_state_update(member, before, after):
     if member.id == client.user.id and before.channel is not None and after.channel is None:
-        print(f"⚠️ İMDAT! Bot odadan atıldı veya kanal silindi! İnadına başka sese giriliyor...")
+        print(f"⚠️ İMDAT! Bot odadan atıldı! İnadına tekrar sessizce sese sızılıyor...")
         guild = before.channel.guild
         
         async def inatci_ziplama():
-            await asyncio.sleep(2) # Cezaları ASLA yavaşlatmaz, arka planda (async) dinlenir
+            await asyncio.sleep(2)
             if guild.voice_client:
                 await guild.voice_client.disconnect(force=True)
                 
@@ -193,25 +150,7 @@ async def on_voice_state_update(member, before, after):
                 if channel.permissions_for(guild.me).connect:
                     try:
                         vc = await channel.connect()
-                        print(f'🛡️ [İNATÇI-SES] Saniyesinde {channel.name} adlı yeni sese intikal edildi.')
-                        
-                        try:
-                            if not vc.is_playing():
-                                ffmpeg_opts = {
-                                    'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 
-                                    'options': '-vn'
-                                }
-                                ffmpeg_yolu = imageio_ffmpeg.get_ffmpeg_exe()
-                                
-                                def yayin_bitti(e):
-                                    if e: print(f'Yayın Hatayla Koptu: {e}')
-                                    else: print('Radyo sustu/bitti.')
-
-                                vc.play(discord.FFmpegPCMAudio("http://stream.laut.fm/arabesk", executable=ffmpeg_yolu, stderr=None, **ffmpeg_opts), after=yayin_bitti)
-                                print(f'📻 [RADYO] Kesintisiz Arabesk {channel.name} kanalına basıldı!')
-                        except Exception as r_hata:
-                            print(f'Radyo zip hatasi: {type(r_hata).__name__} - {r_hata}')
-                            
+                        print(f'🛡️ [İNATÇI-SES] Saniyesinde {channel.name} adlı sese sessiz koruma için intikal edildi.')
                         break
                     except:
                         pass
