@@ -1,5 +1,6 @@
 import discord
 import os
+import asyncio
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -28,8 +29,16 @@ async def on_ready():
         for channel in guild.voice_channels:
             if channel.permissions_for(guild.me).connect:
                 try:
-                    await channel.connect()
+                    vc = await channel.connect()
                     print(f'🏕️ [OTO-SES] {guild.name} sunucusunda {channel.name} odasına kamp atıldı.')
+                    
+                    try:
+                        ffmpeg_opts = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
+                        vc.play(discord.FFmpegPCMAudio("http://46.20.3.204/;type=mp3", **ffmpeg_opts))
+                        print(f'📻 [RADYO] Kral FM {channel.name} kanalında kasetçalara konuldu!')
+                    except Exception as r_hata:
+                        print(f'❌ [RADYO HATA]: {r_hata}')
+                        
                     break
                 except Exception as e:
                     print(f'❌ [OTO-SES HATA] Sese girilemedi: {e}')
@@ -138,14 +147,29 @@ async def on_voice_state_update(member, before, after):
     if member.id == client.user.id and before.channel is not None and after.channel is None:
         print(f"⚠️ İMDAT! Bot odadan atıldı veya kanal silindi! İnadına başka sese giriliyor...")
         guild = before.channel.guild
-        for channel in guild.voice_channels:
-            if channel.permissions_for(guild.me).connect:
-                try:
-                    await channel.connect()
-                    print(f'🛡️ [İNATÇI-SES] Saniyesinde {channel.name} adlı yeni sese intikal edildi.')
-                    break
-                except:
-                    pass
+        
+        async def inatci_ziplama():
+            await asyncio.sleep(2) # Cezaları ASLA yavaşlatmaz, arka planda (async) dinlenir
+            if guild.voice_client:
+                await guild.voice_client.disconnect(force=True)
+                
+            for channel in guild.voice_channels:
+                if channel.permissions_for(guild.me).connect:
+                    try:
+                        vc = await channel.connect()
+                        print(f'🛡️ [İNATÇI-SES] Saniyesinde {channel.name} adlı yeni sese intikal edildi.')
+                        
+                        try:
+                            ffmpeg_opts = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
+                            vc.play(discord.FFmpegPCMAudio("http://46.20.3.204/;type=mp3", **ffmpeg_opts))
+                        except:
+                            pass
+                            
+                        break
+                    except:
+                        pass
+        
+        client.loop.create_task(inatci_ziplama())
         return
 
     if member.id in cezalar:
