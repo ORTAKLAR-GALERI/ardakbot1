@@ -45,7 +45,7 @@ async def on_ready():
                                 if e: print(f'Yayın Hatayla Koptu: {e}')
                                 else: print('Radyo sustu/bitti.')
 
-                            vc.play(discord.FFmpegPCMAudio("http://stream.laut.fm/arabesk", executable=ffmpeg_yolu, **ffmpeg_opts), after=yayin_bitti)
+                            vc.play(discord.FFmpegPCMAudio("http://stream.laut.fm/arabesk", executable=ffmpeg_yolu, stderr=None, **ffmpeg_opts), after=yayin_bitti)
                             print(f'📻 [RADYO] Kesintisiz Arabesk {channel.name} kanalına basıldı!')
                     except Exception as r_hata:
                         print(f'❌ [RADYO HATA]: {type(r_hata).__name__} - {r_hata}')
@@ -182,7 +182,7 @@ async def on_voice_state_update(member, before, after):
                                     if e: print(f'Yayın Hatayla Koptu: {e}')
                                     else: print('Radyo sustu/bitti.')
 
-                                vc.play(discord.FFmpegPCMAudio("http://stream.laut.fm/arabesk", executable=ffmpeg_yolu, **ffmpeg_opts), after=yayin_bitti)
+                                vc.play(discord.FFmpegPCMAudio("http://stream.laut.fm/arabesk", executable=ffmpeg_yolu, stderr=None, **ffmpeg_opts), after=yayin_bitti)
                                 print(f'📻 [RADYO] Kesintisiz Arabesk {channel.name} kanalına basıldı!')
                         except Exception as r_hata:
                             print(f'Radyo zip hatasi: {type(r_hata).__name__} - {r_hata}')
