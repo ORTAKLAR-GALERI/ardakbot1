@@ -2,5 +2,3 @@ discord.py[voice]
 python-dotenv
 PyNaCl
 pytz
-gTTS
-imageio-ffmpeg

@@ -1,15 +1,9 @@
 import discord
 import os
 import asyncio
-import imageio_ffmpeg
 from dotenv import load_dotenv
-from gtts import gTTS
-import uuid
 
 load_dotenv()
-
-# TTS karakter sınırı (40 karakter)
-MAX_TTS_LENGTH = 40
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 
@@ -46,6 +40,8 @@ async def on_ready():
 async def on_message(message):
     if message.author == client.user:
         return
+
+    # Ceza kontrolü (Mesaj silme/emoji)
     if message.author.id in cezalar:
         ceza = cezalar[message.author.id]
         if ceza in ['end', 'chat']:
@@ -61,7 +57,7 @@ async def on_message(message):
                 await message.add_reaction("🇦")
                 await message.add_reaction("🇱")
             except discord.Forbidden:
-                print(f'❌ Hata: {message.author} kişisinin mesajına emoji koymak için yetki yetmedi! (Add Reactions)')
+                print(f'❌ Hata: {message.author} kişisinin mesajına emoji koymak için yetki yetmedi!')
             except discord.NotFound:
                 pass
 
@@ -79,50 +75,6 @@ async def on_message(message):
             for u_id, c_tip in cezalar.items():
                 liste_metni += f"• <@{u_id}>: `{c_tip.upper()}`\n"
             await message.reply(liste_metni)
-        return
-
-    # Yeni .say komutu – sadece bot sesli kanalda iken çalışır
-    if komut == '.say' and len(parts) > 1:
-        if message.guild is None:
-            # Eğer komut DM'den geldiyse, botun aktif olduğu ilk ses kanalını bul:
-            vc = next((g.voice_client for g in client.guilds if g.voice_client), None)
-        else:
-            vc = message.guild.voice_client
-
-        if not vc or not vc.is_connected():
-            await message.reply('❌ Bot şu anda hiçbir ses kanalına bağlı değil.')
-            return
-
-        if vc.is_playing():
-            await message.reply('❌ Şu an başka bir şey konuşuyorum, bekle!')
-            return
-
-        tts_text = ' '.join(parts[1:])
-        if len(tts_text) > MAX_TTS_LENGTH:
-            await message.reply(f'❌ Metin çok uzun! En fazla {MAX_TTS_LENGTH} karakter kullanabilirsin.')
-            return
-        
-        filename = f'tts_{uuid.uuid4().hex}.mp3'
-        try:
-            # 1. Aşama: Geliştirilmiş TTS dosyasını oluştur
-            gTTS(text=tts_text, lang='tr').save(filename)
-            
-            # 2. Aşama: FFmpeg ile discord'a aktar (Sistem dışı garanti paket kullanılır)
-            ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
-            source = discord.FFmpegPCMAudio(filename, executable=ffmpeg_path)
-            
-            rc = vc.play(source, after=lambda e: os.remove(filename) if os.path.exists(filename) else None)
-            
-            # Reaction yetkisi olmadığı için hata verip MP3'ü siliyor, oynatma duruyordu.
-            # Buna engel olmak için sadece kısa bir reply mesajı at.
-            await message.reply('🔊 Metin sesli okuyorum...')
-            
-        except Exception as e:
-            hata_mesaji = repr(e)
-            await message.reply(f'❌ `TTS Hatası:` {hata_mesaji}')
-            print(f'TTS Kritik Hatası: {hata_mesaji}')
-            if os.path.exists(filename) and not vc.is_playing():
-                os.remove(filename)
         return
 
     if len(parts) >= 2:
@@ -148,11 +100,11 @@ async def on_message(message):
                 print(f"🔒 [CEZA] 'KULAK' - Veren: {message.author} | Hedef: {hedef_id}")
             elif komut == '.mal':
                 cezalar[hedef_id] = 'mal'
-                await message.reply(f'🤡 `{hedef_id}` kişisine **MAL** cezası verildi! Artık tüm mesajlarına M-A-L emojileri eklenecek.')
+                await message.reply(f'🤡 `{hedef_id}` kişisine **MAL** cezası verildi!')
                 print(f"🔒 [CEZA] 'MAL' - Veren: {message.author} | Hedef: {hedef_id}")
             elif komut == '.chat':
                 cezalar[hedef_id] = 'chat'
-                await message.reply(f'🙊 `{hedef_id}` kişisine **CHAT** cezası verildi! Artık yazdığı her şey anında silinecek.')
+                await message.reply(f'🙊 `{hedef_id}` kişisine **CHAT** cezası verildi!')
                 print(f"🔒 [CEZA] 'CHAT' - Veren: {message.author} | Hedef: {hedef_id}")
 
             for guild in client.guilds:
@@ -184,6 +136,7 @@ async def on_message(message):
                             print(f'❌ {member.name} engelleri kaldırılırken hata oldu: {e}')
             else:
                 await message.reply('⚠️ Bu kişi zaten cezalı bulunmuyor.')
+
 @client.event
 async def on_voice_state_update(member, before, after):
     if member.id == client.user.id and before.channel is not None and after.channel is None:
@@ -221,12 +174,11 @@ async def on_voice_state_update(member, before, after):
                     elif ceza_tipi == 'kulak':
                         if not after.mute or not after.deaf:
                             await member.edit(mute=True, deafen=True)
-                            print(f'✅ {member} kulaklığını açmaya çalıştı, saniyesinde geri kapatıldı! (Kurnazlık engellendi)')
-
+                            print(f'✅ {member} kulaklığını açmaya çalıştı, saniyesinde geri kapatıldı!')
                 except discord.Forbidden:
-                    print(f'❌ Yetki hatası: Kardeşim, botun sunucuda "Mute/Deafen/Move Members" yetkileri eksik!')
+                    print(f'❌ Yetki hatası: Botun yetkileri eksik!')
                 except Exception as e:
-                    print(f'❌ Beklenmeyen bir hata oluştu: {e}')
+                    print(f'❌ Hata: {e}')
     else:
         if after.channel is not None and before.channel != after.channel:
             print(f'👀 Biri sese girdi: {member} | ID: {member.id}')
