@@ -119,59 +119,27 @@ async def on_message(message):
                             await member.edit(mute=True, deafen=True)
                             await member.move_to(None)
                             print(f'⚡ AKTİF OPERASYON: {member.name} seste yakalandı ve havada vuruldu!')
-            # .say komutu için ID gerekmez, bu yüzden burayı geçiyoruz
-        else:
-            if komut in ['.end', '.ses', '.kulak', '.mal', '.chat']:
-                if komut == '.end':
-                    cezalar[hedef_id] = 'end'
-                    await message.reply(f'🧨 `{hedef_id}` kişisine **END** cezası verildi!')
-                    print(f"🔒 [CEZA] 'END' - Veren: {message.author} | Hedef: {hedef_id}")
-                elif komut == '.ses':
-                    cezalar[hedef_id] = 'ses'
-                    await message.reply(f'🎵 `{hedef_id}` kişisine **SES** cezası verildi!')
-                    print(f"🔒 [CEZA] 'SES' - Veren: {message.author} | Hedef: {hedef_id}")
-                elif komut == '.kulak':
-                    cezalar[hedef_id] = 'kulak'
-                    await message.reply(f'🎧 `{hedef_id}` kişisine **KULAK** cezası verildi!')
-                    print(f"🔒 [CEZA] 'KULAK' - Veren: {message.author} | Hedef: {hedef_id}")
-                elif komut == '.mal':
-                    cezalar[hedef_id] = 'mal'
-                    await message.reply(f'🤡 `{hedef_id}` kişisine **MAL** cezası verildi! Artık tüm mesajlarına M-A-L emojileri eklenecek.')
-                    print(f"🔒 [CEZA] 'MAL' - Veren: {message.author} | Hedef: {hedef_id}")
-                elif komut == '.chat':
-                    cezalar[hedef_id] = 'chat'
-                    await message.reply(f'🙊 `{hedef_id}` kişisine **CHAT** cezası verildi! Artık yazdığı her şey anında silinecek.')
-                    print(f"🔒 [CEZA] 'CHAT' - Veren: {message.author} | Hedef: {hedef_id}")
+                        elif komut == '.kulak':
+                            await member.edit(mute=True, deafen=True)
+                            print(f'⚡ AKTİF OPERASYON: {member.name} seste sohbetin ortasında kör ve sağır bırakıldı!')
+                    except Exception as e:
+                        print(f'❌ Aktif Operasyon Başarısız: {e}')
+        elif komut == '.cikar':
+            if hedef_id in cezalar:
+                del cezalar[hedef_id]
+                await message.reply(f'🗑️ `{hedef_id}` kişinin tüm cezaları kaldırıldı.')
+                print(f"🔓 [AF] Ceza kaldırıldı: {hedef_id}")
 
                 for guild in client.guilds:
                     member = guild.get_member(hedef_id)
                     if member and member.voice and member.voice.channel:
                         try:
-                            if komut in ['.end', '.ses']:
-                                await member.edit(mute=True, deafen=True)
-                                await member.move_to(None)
-                                print(f'⚡ AKTİF OPERASYON: {member.name} seste yakalandı ve havada vuruldu!')
-                            elif komut == '.kulak':
-                                await member.edit(mute=True, deafen=True)
-                                print(f'⚡ AKTİF OPERASYON: {member.name} seste sohbetin ortasında kör ve sağır bırakıldı!')
+                            await member.edit(mute=False, deafen=False)
+                            print(f'✅ {member.name} üzerindeki sesli engeller tamamen kaldırıldı.')
                         except Exception as e:
-                            print(f'❌ Aktif Operasyon Başarısız: {e}')
-            elif komut == '.cikar':
-                if hedef_id in cezalar:
-                    del cezalar[hedef_id]
-                    await message.reply(f'🗑️ `{hedef_id}` kişinin tüm cezaları kaldırıldı.')
-                    print(f"🔓 [AF] Ceza kaldırıldı: {hedef_id}")
-
-                    for guild in client.guilds:
-                        member = guild.get_member(hedef_id)
-                        if member and member.voice and member.voice.channel:
-                            try:
-                                await member.edit(mute=False, deafen=False)
-                                print(f'✅ {member.name} üzerindeki sesli engeller tamamen kaldırıldı.')
-                            except Exception as e:
-                                print(f'❌ {member.name} engelleri kaldırılırken hata oldu: {e}')
-                else:
-                    await message.reply('⚠️ Bu kişi zaten cezalı bulunmuyor.')
+                            print(f'❌ {member.name} engelleri kaldırılırken hata oldu: {e}')
+            else:
+                await message.reply('⚠️ Bu kişi zaten cezalı bulunmuyor.')
 
     # Yeni .say komutu – sadece bot sesli kanalda iken çalışır
     if komut == '.say' and len(parts) > 1:
