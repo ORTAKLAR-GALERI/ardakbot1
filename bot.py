@@ -19,6 +19,22 @@ intents.message_content = True
 
 client = discord.Client(intents=intents)
 
+async def sese_baglan(guild):
+    """Bulunulan sunucuda uygun bir ses kanalına bağlanır."""
+    for channel in guild.voice_channels:
+        if channel.permissions_for(guild.me).connect:
+            try:
+                # Eğer zaten bağlıysa önce bağlantıyı kes (nadiren gerekebilir)
+                if guild.voice_client:
+                    await guild.voice_client.disconnect(force=True)
+                
+                await channel.connect()
+                print(f'🏕️ [OTO-SES] {guild.name} sunucusunda {channel.name} odasına sessiz koruma kalkanı atıldı.')
+                return True
+            except Exception as e:
+                print(f'❌ [OTO-SES HATA] {guild.name} sunucusunda sese girilemedi: {e}')
+    return False
+
 @client.event
 async def on_ready():
     print(f'🤖 Bot başarıyla giriş yaptı: {client.user}')
@@ -26,15 +42,15 @@ async def on_ready():
     print('📡 Gelişmiş Ceza Sistemi Devrede. Mesajlar ve Ses dinleniyor...')
 
     for guild in client.guilds:
-        for channel in guild.voice_channels:
-            if channel.permissions_for(guild.me).connect:
-                try:
-                    vc = await channel.connect()
-                    print(f'🏕️ [OTO-SES] {guild.name} sunucusunda {channel.name} odasına sessiz koruma kalkanı atıldı.')
-                    await asyncio.sleep(2.5)
-                    break
-                except Exception as e:
-                    print(f'❌ [OTO-SES HATA] Sese girilemedi: {e}')
+        await sese_baglan(guild)
+        await asyncio.sleep(1.5) # Aşırı yüklenmeyi önlemek için kısa bekleme
+
+@client.event
+async def on_guild_join(guild):
+    print(f'🆕 Yeni bir sunucuya katıldım: {guild.name} (ID: {guild.id})')
+    # Sunucuya yeni katıldığında sese girmek için kısa bir süre bekle (yetkilerin oturması için)
+    await asyncio.sleep(2)
+    await sese_baglan(guild)
 
 @client.event
 async def on_message(message):
