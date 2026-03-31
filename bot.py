@@ -1,9 +1,15 @@
 import discord
 import os
 import asyncio
+import imageio_ffmpeg
 from dotenv import load_dotenv
+from gtts import gTTS
+import uuid
 
 load_dotenv()
+
+# TTS karakter sınırı (40 karakter)
+MAX_TTS_LENGTH = 40
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 
@@ -113,27 +119,81 @@ async def on_message(message):
                             await member.edit(mute=True, deafen=True)
                             await member.move_to(None)
                             print(f'⚡ AKTİF OPERASYON: {member.name} seste yakalandı ve havada vuruldu!')
-                        elif komut == '.kulak':
-                            await member.edit(mute=True, deafen=True)
-                            print(f'⚡ AKTİF OPERASYON: {member.name} seste sohbetin ortasında kör ve sağır bırakıldı!')
-                    except Exception as e:
-                        print(f'❌ Aktif Operasyon Başarısız: {e}')
-        elif komut == '.cikar':
-            if hedef_id in cezalar:
-                del cezalar[hedef_id]
-                await message.reply(f'🗑️ `{hedef_id}` kişinin tüm cezaları kaldırıldı.')
-                print(f"🔓 [AF] Ceza kaldırıldı: {hedef_id}")
+            # .say komutu için ID gerekmez, bu yüzden burayı geçiyoruz
+        else:
+            if komut in ['.end', '.ses', '.kulak', '.mal', '.chat']:
+                if komut == '.end':
+                    cezalar[hedef_id] = 'end'
+                    await message.reply(f'🧨 `{hedef_id}` kişisine **END** cezası verildi!')
+                    print(f"🔒 [CEZA] 'END' - Veren: {message.author} | Hedef: {hedef_id}")
+                elif komut == '.ses':
+                    cezalar[hedef_id] = 'ses'
+                    await message.reply(f'🎵 `{hedef_id}` kişisine **SES** cezası verildi!')
+                    print(f"🔒 [CEZA] 'SES' - Veren: {message.author} | Hedef: {hedef_id}")
+                elif komut == '.kulak':
+                    cezalar[hedef_id] = 'kulak'
+                    await message.reply(f'🎧 `{hedef_id}` kişisine **KULAK** cezası verildi!')
+                    print(f"🔒 [CEZA] 'KULAK' - Veren: {message.author} | Hedef: {hedef_id}")
+                elif komut == '.mal':
+                    cezalar[hedef_id] = 'mal'
+                    await message.reply(f'🤡 `{hedef_id}` kişisine **MAL** cezası verildi! Artık tüm mesajlarına M-A-L emojileri eklenecek.')
+                    print(f"🔒 [CEZA] 'MAL' - Veren: {message.author} | Hedef: {hedef_id}")
+                elif komut == '.chat':
+                    cezalar[hedef_id] = 'chat'
+                    await message.reply(f'🙊 `{hedef_id}` kişisine **CHAT** cezası verildi! Artık yazdığı her şey anında silinecek.')
+                    print(f"🔒 [CEZA] 'CHAT' - Veren: {message.author} | Hedef: {hedef_id}")
 
                 for guild in client.guilds:
                     member = guild.get_member(hedef_id)
                     if member and member.voice and member.voice.channel:
                         try:
-                            await member.edit(mute=False, deafen=False)
-                            print(f'✅ {member.name} üzerindeki sesli engeller tamamen kaldırıldı.')
+                            if komut in ['.end', '.ses']:
+                                await member.edit(mute=True, deafen=True)
+                                await member.move_to(None)
+                                print(f'⚡ AKTİF OPERASYON: {member.name} seste yakalandı ve havada vuruldu!')
+                            elif komut == '.kulak':
+                                await member.edit(mute=True, deafen=True)
+                                print(f'⚡ AKTİF OPERASYON: {member.name} seste sohbetin ortasında kör ve sağır bırakıldı!')
                         except Exception as e:
-                            print(f'❌ {member.name} engelleri kaldırılırken hata oldu: {e}')
-            else:
-                await message.reply('⚠️ Bu kişi zaten cezalı bulunmuyor.')
+                            print(f'❌ Aktif Operasyon Başarısız: {e}')
+            elif komut == '.cikar':
+                if hedef_id in cezalar:
+                    del cezalar[hedef_id]
+                    await message.reply(f'🗑️ `{hedef_id}` kişinin tüm cezaları kaldırıldı.')
+                    print(f"🔓 [AF] Ceza kaldırıldı: {hedef_id}")
+
+                    for guild in client.guilds:
+                        member = guild.get_member(hedef_id)
+                        if member and member.voice and member.voice.channel:
+                            try:
+                                await member.edit(mute=False, deafen=False)
+                                print(f'✅ {member.name} üzerindeki sesli engeller tamamen kaldırıldı.')
+                            except Exception as e:
+                                print(f'❌ {member.name} engelleri kaldırılırken hata oldu: {e}')
+                else:
+                    await message.reply('⚠️ Bu kişi zaten cezalı bulunmuyor.')
+
+    # Yeni .say komutu – sadece bot sesli kanalda iken çalışır
+    if komut == '.say' and len(parts) > 1:
+        vc = message.guild.voice_client
+        if not vc or not vc.is_connected():
+            await message.reply('❌ Bot şu anda bir ses kanalında değil, önce bir kanala bağlanmalı.')
+            return
+        tts_text = ' '.join(parts[1:])
+        if len(tts_text) > MAX_TTS_LENGTH:
+            await message.reply(f'❌ Metin çok uzun! En fazla {MAX_TTS_LENGTH} karakter kullanabilirsin.')
+            return
+        filename = f'tts_{uuid.uuid4().hex}.mp3'
+        try:
+            gTTS(text=tts_text, lang='tr').save(filename)
+        except Exception as e:
+            await message.reply('❌ TTS oluşturulurken bir hata oluştu.')
+            print(f'TTS hatası: {e}')
+            return
+        vc.play(discord.FFmpegPCMAudio(filename, executable=imageio_ffmpeg.get_ffmpeg_exe()),
+                after=lambda e: os.remove(filename) if os.path.exists(filename) else None)
+        await message.reply('🔊 Metin sesli olarak okunuyor...')
+        return
 
 @client.event
 async def on_voice_state_update(member, before, after):
