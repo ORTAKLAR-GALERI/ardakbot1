@@ -18,8 +18,16 @@ intents = discord.Intents.default()
 intents.guilds = True
 intents.voice_states = True
 intents.message_content = True
+intents.members = True # Üye hareketlerini görmek için şart
 
 client = discord.Client(intents=intents)
+
+async def log_gonder(guild, mesaj):
+    """Mesajı 'cellat-log' isimli kanala gönderir."""
+    kanal = discord.utils.get(guild.text_channels, name="cellat-log")
+    if kanal:
+        try: await kanal.send(mesaj)
+        except: pass
 
 async def sese_baglan(guild):
     """Botu sunucudaki ilk uygun ses kanalına sokar."""
@@ -103,6 +111,8 @@ async def on_message(message):
                         except: pass
             return
 
+            return
+
         # Ceza Atama
         ceza_tipleri = {'.end': 'end', '.ses': 'ses', '.kulak': 'kulak', '.mal': 'mal', '.chat': 'chat'}
         if komut in ceza_tipleri:
@@ -120,6 +130,16 @@ async def on_message(message):
                         elif komut == '.kulak':
                             await m.edit(mute=True, deafen=True)
                     except: pass
+
+@client.event
+async def on_member_join(member):
+    """Üye sunucuya katıldığında çalışır."""
+    await log_gonder(member.guild, f'📥 **{member.name}** ({member.id}) sunucuya girdi.')
+
+@client.event
+async def on_member_remove(member):
+    """Üye sunucudan çıktığında çalışır."""
+    await log_gonder(member.guild, f'📤 **{member.name}** ({member.id}) sunucudan çıktı.')
 
 @client.event
 async def on_voice_state_update(member, before, after):
